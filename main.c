@@ -12,6 +12,7 @@ int main(int argc, char **argv)
       abort();
    if (argc < 2) {
       LOG("Bad number of arguments: expected at least 1 but got %d", argc - 1);
+      // marmarek: add usage info, like what that "at least 1" arg should be
       return EXIT_FAILURE;
    }
    for (int i = 1; i < argc; ++i) {
@@ -27,6 +28,7 @@ int main(int argc, char **argv)
       uint8_t *fbuf = malloc(size);
       if (!fbuf)
          err(1, "malloc(%zu)", size);
+      // marmarek: mmap instead of read? but also, if keeping read(), you probably need to handle short read, not error out on it
       if ((size_t)read(p, fbuf, size) != size)
          err(1, "read()");
       struct ParsedImage image;

@@ -18,6 +18,7 @@ static void test_dos_header(void) {
    assert(extract_pe_header(header, 0x7FFFFFFFUL + 1) == NULL);
    // Corrupt the NT header magic
    uint32_t nt_offset = 128;
+   // marmarek: what is 60? use #define or a comment (or sizeof() relevant structure) to describe it
    memcpy(header + 60, &nt_offset, 4);
    memcpy(header + nt_offset, "PE\0", 4);
    header[0] = 'M';

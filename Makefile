@@ -6,6 +6,7 @@ MANDATORY_CFLAGS := -fno-strict-aliasing -Werror=format \
 						  -pedantic-errors
 TARGET = '$(subst ','\'',$@)'#
 SOURCE = '$(subst ','\'',$<)'#
+# marmarek: detect based on $(CC) ?
 ifeq "$(WARNINGS)" "clang"
 EXTRA_CFLAGS := -fsanitize=undefined -fsanitize-minimal-runtime  \
 	-fPIC -Weverything -Wno-c++98-compat \

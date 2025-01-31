@@ -182,6 +182,7 @@ static bool parse_file_header(const EFI_IMAGE_FILE_HEADER *untrusted_file_header
    }
    if (untrusted_file_header->Characteristics & EFI_IMAGE_FILE_DLL) {
       LOG("DLL cannot be executable");
+      // marmarek: message suggests it's something wrong, but it's not rejected; either reword message or return false here
    }
    if (untrusted_file_header->PointerToSymbolTable ||
        untrusted_file_header->NumberOfSymbols) {
@@ -217,6 +218,7 @@ static bool parse_file_header(const EFI_IMAGE_FILE_HEADER *untrusted_file_header
       return false;
    }
 
+   // marmarek: some #define or otherwise more descriptive thing for the 96 below
    if (NumberOfSections > 96) {
       LOG("Too many sections: got %" PRIu16 ", limit 96", NumberOfSections);
       return false;
@@ -250,10 +252,12 @@ validate_image_base_and_alignment(uint64_t const image_base,
                                   uint32_t const file_alignment,
                                   uint32_t const section_alignment)
 {
+    // marmarek: describe numeric constant (similar to earlier comments)
    if (image_base % (1UL << 16)) {
       LOG("Image base 0x%" PRIx64 " not multiple of 0x%x", image_base, 1U << 16);
       return false;
    }
+    // marmarek: describe numeric constant (similar to earlier comments)
    if (section_alignment < (1U << 12)) {
       LOG("Section alignment too small (0x%" PRIx32 " < 0x%x)", section_alignment, 1U << 12);
       return false;
@@ -266,6 +270,7 @@ validate_image_base_and_alignment(uint64_t const image_base,
       LOG("File alignment too small (0x%" PRIx32 " < 0x%x)", file_alignment, MIN_FILE_ALIGNMENT);
       return false;
    }
+    // marmarek: describe numeric constant (similar to earlier comments)
    if (file_alignment > (1U << 16)) {
       LOG("Too large file alignment (0x%" PRIx32 " > 0x%x)", file_alignment, 1U << 16);
       return false;
@@ -510,12 +515,14 @@ bool pe_parse(const uint8_t *const ptr, size_t const len, struct ParsedImage *im
    directories_found[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY] = true; // special case
 
    for (uint32_t i = 0; i < image->n_sections; ++i) {
+       // marmarek: in general case that is not an error?
       if (image->sections[i].PointerToRelocations != 0 ||
           image->sections[i].NumberOfRelocations != 0) {
          LOG("Section %" PRIu32 " contains COFF relocations", i);
          return false;
       }
 
+       // marmarek: in general case that is not an error?
       if (image->sections[i].PointerToLinenumbers != 0 ||
           image->sections[i].NumberOfLinenumbers != 0) {
          LOG("Section %" PRIu32 " contains COFF line numbers", i);
@@ -543,6 +550,7 @@ bool pe_parse(const uint8_t *const ptr, size_t const len, struct ParsedImage *im
             LOG("Misaligned raw data size");
             return false;
          }
+         // marmarek: is that really not allowed? could be necessary for alignment, no?
          if (image->sections[i].PointerToRawData != last_section_start) {
             LOG("Section %" PRIu32 " starts at 0x%" PRIx32 ", but %s at 0x%" PRIx32,
                 i, image->sections[i].PointerToRawData,
@@ -550,6 +558,7 @@ bool pe_parse(const uint8_t *const ptr, size_t const len, struct ParsedImage *im
                 last_section_start);
             return false;
          }
+         // marmarek: you sure it's not allowed? or is the comparison reversed here?
          if (image->sections[i].SizeOfRawData < image->sections[i].Misc.VirtualSize) {
             LOG("Section %" PRIu32 " has size 0x%" PRIx32 " in the file, but "
                 "0x%" PRIx32 " in memory", i, image->sections[i].SizeOfRawData,
@@ -570,6 +579,10 @@ bool pe_parse(const uint8_t *const ptr, size_t const len, struct ParsedImage *im
              image->sections[i].VirtualAddress, image->image_base, max_address);
          return false;
       }
+      // marmarek: VMA alignment is relevant only for loadable sections, no?
+      // especially, debug symbols etc are not loadable (not sure which bit
+      // that is, but objdump shows that as missing "LOAD" attribute), and
+      // usually not aligned
       uint64_t const untrusted_virtual_address = image->sections[i].VirtualAddress + image->image_base;
       if (!IS_ALIGNED(untrusted_virtual_address, image->section_alignment)) {
          LOG("Section %" PRIu32 " (%.8s) has misaligned VMA: 0x%" PRIx64 " not aligned to 0x%" PRIx32,
@@ -651,6 +664,7 @@ bool pe_parse(const uint8_t *const ptr, size_t const len, struct ParsedImage *im
       uint32_t signature_offset = untrusted_signature_offset;
       uint32_t untrusted_signature_len = (uint32_t)len - signature_offset;
 
+      // marmarek: for consistency use % 8
       if ((untrusted_signature_len & 7) != 0) {
          LOG("Signature size not a multiple of 8 (got 0x%" PRIx32 ")",
              untrusted_signature_len);
